@@ -1,0 +1,116 @@
+---
+title: "EDA-Project2"
+author: "MiRo"
+date: "11 Jun 2015"
+output: html_document
+---
+Coursera Exploratory Data Analysis Project 2
+
+Load data
+=========
+
+Load prepared data
+------------------
+
+```{r}
+library(ggplot2)
+NEI <- readRDS("data/summarySCC_PM25.rds")
+NEI$year <- factor(NEI$year, levels = c('1999', '2002', '2005', '2008'))
+SCC <- readRDS("data/Source_Classification_Code.rds")
+```
+
+Samples data for testing
+------------------------
+```{r}
+NEIsample <- NEI[sample(nrow(NEI), size = 5000, replace = F), ]
+```
+
+Aggregates
+----------
+```{r}
+Emissions <- aggregate(NEI[, 'Emissions'], by = list(NEI$year), FUN = sum)
+Emissions$PM <- round(Emissions[, 2] / 1000, 2)
+
+MD <- subset(NEI, fips == '24510')
+MD$year <- factor(MD$year, levels = c('1999', '2002', '2005', '2008'))
+
+```
+
+Make plots 1,2,3
+----------
+```{r}
+png(filename = "plot1.png")
+barplot(Emissions$PM, 
+        names.arg = Emissions$Group.1, 
+        main = expression('Emission of PM'[2.5]),
+        xlab = 'Year', ylab = expression(paste('PM',''[2.5])))
+dev.off()
+
+png(filename = 'plot2.png')
+tmp <- tapply(X = MD$Emissions, 
+               INDEX = MD$year, 
+               FUN = sum)
+df <- data.frame(x = unique(MD$year), y = tmp)
+qplot(x = df$x, y = df$y, geom = "bar", stat = "identity", xlab = "Year", ylab = expression('PM'[2.5]))
+dev.off()
+
+png('plot3.png', width = 1198, height = 550, units = 'px')
+ggplot(data = MD, aes(x = year, y = log(Emissions))) + facet_grid(. ~ type) + guides(fill = F) + geom_boxplot(aes(fill = type)) + stat_boxplot(geom = 'errorbar') + ylab(expression(paste('Log', ' of PM'[2.5], ' Emissions'))) + xlab('Year') + ggtitle('Emissions per Type, Baltimore City, MA') + geom_jitter(alpha = 0.10)
+dev.off()
+```
+
+Plot 4
+------
+```{r}
+# Coal-related SCC
+SCC.coal = SCC[grepl("coal", SCC$Short.Name, ignore.case = TRUE), ]
+
+# Merges two data sets
+merge <- merge(x = NEI, y = SCC.coal, by = 'SCC')
+merge.sum <- aggregate(merge[, 'Emissions'], by = list(merge$year), sum)
+colnames(merge.sum) <- c('Year', 'Emissions')
+
+png(filename = 'plot4.png')
+ggplot(data = merge.sum, aes(x = Year, y = Emissions / 1000)) + geom_line(aes(group = 1, col = Emissions)) + geom_point(aes(size = 2, col = Emissions)) + ggtitle(expression('Total Emissions of PM'[2.5])) + ylab(expression(paste('PM', ''[2.5], ' in kilotons'))) + geom_text(aes(label = round(Emissions / 1000, digits = 0), size = 1, hjust = 1.5, vjust = 1.5)) + theme(legend.position = 'center') + scale_colour_gradient(low = 'black', high = 'blue')
+dev.off()
+```
+
+Plot 5
+------
+```{r}
+# Baltimore City, Maryland == fips
+MD.onroad <- subset(NEI, fips == 24510 & type == 'ON-ROAD')
+
+# Aggregates
+MD.df <- aggregate(MD.onroad[, 'Emissions'], by = list(MD.onroad$year), sum)
+colnames(MD.df) <- c('year', 'Emissions')
+
+png('plot5.png')
+ggplot(data = MD.df, aes(x = year, y = Emissions)) + geom_bar(aes(fill = year), stat = "identity") + guides(fill = F) + ggtitle('Total Emissions of Motor Vehicle Sources in Baltimore City, Maryland') + ylab(expression('PM'[2.5])) + xlab('Year') + theme(legend.position = 'none') + geom_text(aes(label = round(Emissions, 0), size = 1, hjust = 0.5, vjust = 2))
+dev.off()
+```
+
+Plot 6
+------
+```{r}
+MD.onroad <- subset(NEI, fips == '24510' & type == 'ON-ROAD')
+CA.onroad <- subset(NEI, fips == '06037' & type == 'ON-ROAD')
+
+# Aggregates
+MD.DF <- aggregate(MD.onroad[, 'Emissions'], by = list(MD.onroad$year), sum)
+colnames(MD.DF) <- c('year', 'Emissions')
+MD.DF$City <- paste(rep('MD', 4))
+
+CA.DF <- aggregate(CA.onroad[, 'Emissions'], by = list(CA.onroad$year), sum)
+colnames(CA.DF) <- c('year', 'Emissions')
+CA.DF$City <- paste(rep('CA', 4))
+
+DF <- as.data.frame(rbind(MD.DF, CA.DF))
+
+png('plot6.png', width = 1080, height = 550)
+ggplot(data = DF, aes(x = year, y = Emissions)) + geom_bar(aes(fill = year), colours ="darkgreen", stat = "identity") + theme_classic() + guides(fill = F) + ggtitle('Total Emissions\nLos Angeles County vs. Baltimore City') + ylab(expression('PM'[2.5])) + xlab('Year') + theme(legend.position = "top") + facet_grid(. ~ City) + geom_text(aes(label = round(Emissions, 0), size = 2, hjust = 1.5, vjust = -1))
+dev.off()
+```
+
+
+
