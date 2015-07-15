@@ -9,7 +9,7 @@ output:
 ## Some preparations
 
 Load packages
-```{r LoadPackages, results='hide'}
+```{r LoadPackages, message=FALSE, warning=FALSE, results='hide'}
 packages <- c("data.table", "ggplot2", "dplyr", "scales")
 sapply(packages, require, character.only=TRUE, quietly=TRUE)
 ```
