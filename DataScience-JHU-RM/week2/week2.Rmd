@@ -1,0 +1,85 @@
+---
+title: "DS-JHU-RM-W2"
+output: html_document
+---
+
+# Regression Models Coursera
+## Week 2
+
+
+### Question 1
+
+```{r}
+x <- c(0.61, 0.93, 0.83, 0.35, 0.54, 0.16, 0.91, 0.62, 0.62)
+y <- c(0.67, 0.84, 0.6, 0.18, 0.85, 0.47, 1.1, 0.65, 0.36)
+fit <- lm(y~x)
+summary(fit)
+```
+
+### Question 2
+```{r}
+e <- resid(fit)
+sqe <- e*e
+res.var <- sum(sqe) / (length(e) - 2)
+sqrt(res.var)  
+```
+
+### Question 3
+```{r}
+data(mtcars)
+attach(mtcars)
+fit <- lm(mpg ~ wt, mtcars)
+summary(fit)
+predict(fit,data.frame(wt=mean(wt)), interval="confidence")
+```
+
+### Question 4
+```{r}
+?mtcars
+```
+
+### Question 5
+```{r}
+summary(fit)
+predict(fit, data.frame(wt=3), interval="prediction")
+```
+
+### Question 6
+```{r}
+fit2 <- lm(mpg ~ I(wt / 2))
+tbl2 <- summary(fit2)$coefficients
+mean <- tbl2[2,1]      
+se <- tbl2[2,2] 
+df <- fit2$df
+#Two sides T-Tests
+mean + c(-1,1) * qt(0.975, df=df) * se
+```
+
+### Question 7
+```{r}
+summary(fit)$coefficients[2, 1]
+fit3 <- lm(mpg ~ I(wt / 100))
+summary(fit3)$coefficients[2, 1]
+# It would get multiplied by 100.
+```
+
+### Question 8
+```{r}
+# Y = beta0 + beta1 * X + epsilon = 
+# beta1 * (X + c) + (beta0 - beta1 * c)
+# New intercept: beta0 - c*beta1
+```
+
+### Question 9
+```{r}
+fitRes <- fit$residuals ^ 2
+fitIntercept <- lm(mpg ~ 1, mtcars)
+fitInterceptRes <- fitIntercept$residuals ^ 2
+sum(fitRes) /sum(fitInterceptRes) # 0.2471672
+```
+
+### Question 10
+```{r}
+sum(resid(fit))
+# If an intercept is included, then they will sum to 0.
+```
