@@ -1,0 +1,105 @@
+---
+title: "DS-JHU-ML-W2"
+output: html_document
+---
+
+## Question 1
+Load the Alzheimer's disease data using the commands:
+```{r}
+library(AppliedPredictiveModeling)
+library(caret)
+data(AlzheimerDisease)
+```
+Which of the following commands will create training and test sets with about 50% of the observations assigned to each?
+```{r}
+adData = data.frame(diagnosis,predictors)
+trainIndex = createDataPartition(diagnosis, p = 0.50,list=FALSE)
+training = adData[trainIndex,]
+testing = adData[-trainIndex,]
+```
+
+## Question 2
+Load the cement data using the commands:
+```{r}
+library(AppliedPredictiveModeling)
+data(concrete)
+library(caret)
+set.seed(587)
+inTrain = createDataPartition(mixtures$CompressiveStrength, p = 3/4)[[1]]
+training = mixtures[ inTrain,]
+testing = mixtures[-inTrain,]
+```
+Make a histogram and confirm the SuperPlasticizer variable is skewed. Normally you might use the log transform to try to make the data more symmetric. Why would that be a poor choice for this variable?
+```{r}
+ggplot(concrete, aes(Superplasticizer)) + geom_histogram()
+#The log transform does not reduce the skewness of the non-zero values of SuperPlasticizer
+
+
+xnames <- colnames(concrete)[1:8]
+featurePlot(x=training[, xnames], y=training$CompressiveStrength, plot="pairs")
+index <- seq_along(1:nrow(training))
+ggplot(data=training, aes(x=index, y=CompressiveStrength)) + geom_point() + 
+  theme_bw()
+# Step-like pattern -> 4 categories
+library(Hmisc)
+cutCompressiveStrength <- cut2(training$CompressiveStrength, g=4)
+summary(cutCompressiveStrength)
+ggplot(data=training, aes(y=index, x=cutCompressiveStrength)) + 
+  geom_boxplot() + geom_jitter(col="blue") + theme_bw()
+```
+
+
+## Question 3
+Load the Alzheimer's disease data using the commands:
+```{r}
+library(caret)
+library(AppliedPredictiveModeling)
+set.seed(3433)
+data(AlzheimerDisease)
+adData = data.frame(diagnosis,predictors)
+inTrain = createDataPartition(adData$diagnosis, p = 3/4)[[1]]
+training = adData[ inTrain,]
+testing = adData[-inTrain,]
+```
+Find all the predictor variables in the training set that begin with IL. Perform principal components on these variables with the preProcess() function from the caret package. Calculate the number of principal components needed to capture 90% of the variance. How many are there?
+```{r}
+selection <- grep("^IL", names(training))
+summary(training[,selection])
+preProc <- preProcess(training[,selection], method = "pca", thresh = 0.9, outcome = training$diagnosis)
+preProc$rotation 
+
+```
+
+## Question 4
+Load the Alzheimer's disease data using the commands:
+```{r}
+library(caret)
+library(AppliedPredictiveModeling)
+set.seed(3433)
+data(AlzheimerDisease)
+adData = data.frame(diagnosis,predictors)
+inTrain = createDataPartition(adData$diagnosis, p = 3/4)[[1]]
+training = adData[ inTrain,]
+testing = adData[-inTrain,]
+```
+Create a training data set consisting of only the predictors with variable names beginning with IL and the diagnosis. Build two predictive models, one using the predictors as they are and one using PCA with principal components explaining 80% of the variance in the predictors. Use method="glm" in the train function. What is the accuracy of each method in the test set? Which is more accurate?
+```{r}
+set.seed(3433)
+IL <- grep("^IL", colnames(training), value=TRUE)
+ILpredictors <- predictors[, IL]
+df <- data.frame(diagnosis, ILpredictors)
+inTrain <- createDataPartition(df$diagnosis, p=3/4)[[1]]
+training <- df[inTrain,]
+testing <- df[-inTrain,]
+modelFit <- train(diagnosis ~ ., method="glm", data=training)
+predictions <- predict(modelFit, newdata=testing)
+C1 <- confusionMatrix(predictions, testing$diagnosis)
+print(C1)
+acc1 <- C1$overall[1]
+
+modelFit <- train(diagnosis ~ ., method = "glm", data = training, preProc = "pca", trControl = trainControl(preProcOptions = list(thresh = 0.8)))
+C2 <- confusionMatrix(testing$diagnosis, predict(modelFit, testing))
+acc2 <- C2$overall
+acc2
+```
+
