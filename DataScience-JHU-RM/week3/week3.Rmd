@@ -1,0 +1,160 @@
+---
+title: "DS-JHU-RM-W3"
+author: "MiRo"
+date: "24 Jul 2015"
+output: html_document
+---
+
+# Regression Models Coursera
+## Week 3
+###Loading requirements and data.
+```{r Preparation, cache=TRUE, warning=FALSE, message=FALSE}
+packages <- c("data.table", "ggplot2", "dplyr", "scales")
+sapply(packages, require, character.only=TRUE, quietly=TRUE)
+
+options(width = 100)
+opts_chunk$set(message = F, error = F, warning = F, comment = NA, fig.align = 'center', dpi = 100, tidy = F, cache.path = '.cache/', fig.path = 'fig/')
+```
+
+### Lecture
+```{r}
+library(datasets); data("swiss");require(graphics)
+pairs(swiss, panel = panel.smooth, main="Swish data", col=3+(swiss$Catholic>50))
+
+summary(lm(Fertility~.,data=swiss))
+```
+
+### Dummy variable
+```{r}
+data("InsectSprays")
+summary(lm(count~spray, data=InsectSprays))$coef
+summary(lm(count~
+             I(1*(spray=="B")) + I(1*(spray=="C")) + 
+             I(1*(spray=="D")) + I(1*(spray=="E")) +
+             I(1*(spray=="F"))
+           , data = InsectSprays))$coef
+
+#Если хочется, чтобы коэф модели были представлены относительно 0, те являлись
+#медианами, стоит использовать -1
+summary(lm(count~spray-1, data=InsectSprays))$coef
+```
+
+### Simulate data
+```{r}
+n <- 100; t <- rep(c(0, 1), c(n/2, n/2)); x <- c(runif(n/2), runif(n/2)); 
+beta0 <- 0; beta1 <- 2; tau <- 1; sigma <- .2
+y <- beta0 + x * beta1 + t * tau + rnorm(n, sd = sigma)
+plot(x, y, type = "n", frame = FALSE)
+abline(lm(y ~ x), lwd = 2)
+abline(h = mean(y[1 : (n/2)]), lwd = 3)
+abline(h = mean(y[(n/2 + 1) : n]), lwd = 3)
+fit <- lm(y ~ x + t)
+abline(coef(fit)[1], coef(fit)[2], lwd = 3)
+abline(coef(fit)[1] + coef(fit)[3], coef(fit)[2], lwd = 3)
+points(x[1 : (n/2)], y[1 : (n/2)], pch = 21, col = "black", bg = "lightblue", cex = 2)
+points(x[(n/2 + 1) : n], y[(n/2 + 1) : n], pch = 21, col = "black", bg = "salmon", cex = 2)
+```
+
+
+
+## Quiz 3.
+### Question 1
+Consider the mtcars data set. Fit a model with mpg as the outcome 
+that includes number of cylinders as a factor variable and weight
+as confounder. Give the adjusted estimate for the expected change
+in mpg comparing 8 cylinders to 4.
+```{r}
+data(mtcars)
+attach(mtcars)
+cylF <- as.factor(cyl)
+fit <- lm(mpg ~ cylF + wt, data=mtcars)
+summary(fit)
+x <- predict.lm(fit, data.frame(cyl = cylF, wt))
+mean(x[cylF==4])-mean(x[cylF==8])
+```
+
+### Question 2
+Consider the mtcars data set. Fit a model with mpg as the outcome
+that includes number of cylinders as a factor variable and weight
+as a possible confounding variable. Compare the effect of 8 versus
+4 cylinders on mpg for the adjusted and unadjusted by weight models.
+Here, adjusted means including the weight variable as a term in the
+regression model and unadjusted means the model without weight 
+included. What can be said about the effect comparing 8 and 4 cylinders
+after looking at models with and without weight included?.
+```{r}
+fit2 <- lm(mpg ~ as.factor(cyl), data=mtcars)
+summary(fit2) 
+#$coef[3] # -11.56364
+summary(fit)
+#$coef[3] # -6.07086
+# Holding weight constant, cylinder appears to have less of an 
+# impact on mpg than if weight is disregarded.
+```
+
+### Question 3
+Consider the mtcars data set. Fit a model with mpg as the outcome that 
+considers number of cylinders as a factor variable and weight as confounder.
+Now fit a second model with mpg as the outcome model that considers the 
+interaction between number of cylinders (as a factor variable) and weight.
+Give the P-value for the likelihood ratio test comparing the two models 
+and suggest a model using 0.05 as a type I error rate significance benchmark.
+```{r}
+summary(fit)
+fit3 <- lm(mpg ~ as.factor(cyl)*wt, data=mtcars)
+# OR another way
+# fit32 <- lm(mpg ~ factor(cyl) + wt + factor(cyl):wt, data=mtcars)
+summary(fit3)
+result <- anova(fit, fit3, test="Chi")
+result$Pr # 0.1037502
+# The P-value is larger than 0.05. So, according to our criterion, 
+# we would fail to reject, which suggests that the interaction 
+# terms may not be necessary.
+
+```
+
+
+### Question 4
+Consider the mtcars data set. Fit a model with mpg as the outcome that 
+includes number of cylinders as a factor variable and weight inlcuded in 
+the model as
+lm(mpg ~ I(wt * 0.5) + factor(cyl), data = mtcars)
+How is the wt coefficient interpretted?
+```{r}
+fit4 <- lm(mpg ~ I(wt * 0.5) + factor(cyl), data=mtcars)
+summary(fit4)
+# wt coef: The estimated expected change in MPG per one ton increase in 
+# weight for a specific number of cylinders (4, 6, 8).
+
+```
+
+
+### Question 5
+Consider the following data set
+Give the hat diagonal for the most influential point
+```{r}
+x <- c(0.586, 0.166, -0.042, -0.614, 11.72)
+y <- c(0.549, -0.026, -0.127, -0.751, 1.344)
+fit5 <- lm(y ~ x)
+lm.influence(fit5)$hat[5] # 0.9945734
+hatvalues(fit5)
+```
+
+### Question 6
+Consider the following data set
+Give the slope dfbeta for the point with the highest hat value.
+```{r}
+dfbetas(fit5) # -133.8226
+```
+
+### Question 7
+Consider a regression relationship between Y and X with and 
+without adjustment for a third variable Z. Which of the following
+is true about comparing the regression coefficient between Y 
+and X with and without adjustment for Z.
+```{r}
+# A: It is possible for the coefficient to reverse sign after 
+# adjustment. For example, it can be strongly significant and 
+# positive before adjustment and strongly significant and negative 
+# after adjustment.
+```

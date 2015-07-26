@@ -1,0 +1,420 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdfetex 2015.7.22)  26 JUL 2015 14:07
+entering extended mode
+ restricted \write18 enabled.
+ file:line:error style messages enabled.
+ %&-line parsing enabled.
+**\nonstopmode \input /Users/romadanovskiy/Documents/GitHub/Coursera/DataScienc
+e-JHU-RM/Project/MT-mpg.md
+
+(/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-m
+pg.md
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:5: Missing $ inserted.
+<inserted text> 
+                $
+<to be read again> 
+                   _
+l.5 output: pdf_
+                document
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:7: Missing $ inserted.
+<inserted text> 
+                $
+<to be read again> 
+                   \par 
+l.7 
+    
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:8: You can't use `macro parameter character #' in vertical mode.
+l.8 #
+     # Executive summary
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:8: You can't use `macro parameter character #' in vertical mode.
+l.8 ##
+       Executive summary
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+Missing character: There is no â in font cmr10!
+Missing character: There is no € in font cmr10!
+Missing character: There is no “ in font cmr10!
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:15: You can't use `macro parameter character #' in vertical mode.
+l.15 #
+      # Contex
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:15: You can't use `macro parameter character #' in vertical mode.
+l.15 ##
+        Contex
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:26: You can't use `macro parameter character #' in vertical mode.
+l.26 #
+      # Regression Model
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:26: You can't use `macro parameter character #' in vertical mode.
+l.26 ##
+        Regression Model
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:31: You can't use `macro parameter character #' in horizontal mode.
+l.31 summary(simpleMpgModel) #
+                               results="hide"
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:35: You can't use `macro parameter character #' in vertical mode.
+l.35 #
+      ## Finding proper set of explanation variables
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:35: You can't use `macro parameter character #' in vertical mode.
+l.35 ##
+       # Finding proper set of explanation variables
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:35: You can't use `macro parameter character #' in vertical mode.
+l.35 ###
+         Finding proper set of explanation variables
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:40: You can't use `macro parameter character #' in horizontal mode.
+l.40 summary(fullModel) #
+                          results="hide"
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:48: You can't use `macro parameter character #' in horizontal mode.
+l.48 summary(stepModel) #
+                          results="hide"
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:59: You can't use `macro parameter character #' in horizontal mode.
+l.59 #
+      # Analysis of Variance Table
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:59: You can't use `macro parameter character #' in horizontal mode.
+l.59 ##
+        Analysis of Variance Table
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:60: You can't use `macro parameter character #' in horizontal mode.
+l.60 #
+      #
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:60: You can't use `macro parameter character #' in horizontal mode.
+l.60 ##
+       
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:61: You can't use `macro parameter character #' in horizontal mode.
+l.61 #
+      # Model 1: mpg ~ wt + qsec + am
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:61: You can't use `macro parameter character #' in horizontal mode.
+l.61 ##
+        Model 1: mpg ~ wt + qsec + am
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:62: You can't use `macro parameter character #' in horizontal mode.
+l.62 #
+      # Model 2: mpg ~ am
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:62: You can't use `macro parameter character #' in horizontal mode.
+l.62 ##
+        Model 2: mpg ~ am
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:63: You can't use `macro parameter character #' in horizontal mode.
+l.63 #
+      #   Res.Df    RSS Df Sum of Sq      F   Pr(>F)
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:63: You can't use `macro parameter character #' in horizontal mode.
+l.63 ##
+          Res.Df    RSS Df Sum of Sq      F   Pr(>F)
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:64: You can't use `macro parameter character #' in horizontal mode.
+l.64 #
+      # 1     28 169.29
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:64: You can't use `macro parameter character #' in horizontal mode.
+l.64 ##
+        1     28 169.29
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:65: You can't use `macro parameter character #' in horizontal mode.
+l.65 #
+      # 2     30 720.90 -2   -551.61 45.618 1.55e-09 ***
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:65: You can't use `macro parameter character #' in horizontal mode.
+l.65 ##
+        2     30 720.90 -2   -551.61 45.618 1.55e-09 ***
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:66: You can't use `macro parameter character #' in horizontal mode.
+l.66 #
+      # ---
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:66: You can't use `macro parameter character #' in horizontal mode.
+l.66 ##
+        ---
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:67: You can't use `macro parameter character #' in horizontal mode.
+l.67 #
+      # Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:67: You can't use `macro parameter character #' in horizontal mode.
+l.67 ##
+        Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:75: You can't use `macro parameter character #' in horizontal mode.
+l.75 #
+      #                   2.5 %    97.5 %
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:75: You can't use `macro parameter character #' in horizontal mode.
+l.75 ##
+                          2.5 %    97.5 %
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:76: You can't use `macro parameter character #' in horizontal mode.
+l.76 #
+      # (Intercept) -4.63829946 23.873860
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:76: You can't use `macro parameter character #' in horizontal mode.
+l.76 ##
+        (Intercept) -4.63829946 23.873860
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:77: You can't use `macro parameter character #' in horizontal mode.
+l.77 #
+      # wt          -5.37333423 -2.459673
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:77: You can't use `macro parameter character #' in horizontal mode.
+l.77 ##
+        wt          -5.37333423 -2.459673
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:78: You can't use `macro parameter character #' in horizontal mode.
+l.78 #
+      # qsec         0.63457320  1.817199
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:78: You can't use `macro parameter character #' in horizontal mode.
+l.78 ##
+        qsec         0.63457320  1.817199
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:79: You can't use `macro parameter character #' in horizontal mode.
+l.79 #
+      # am1          0.04573031  5.825944
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:79: You can't use `macro parameter character #' in horizontal mode.
+l.79 ##
+        am1          0.04573031  5.825944
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:85: You can't use `macro parameter character #' in vertical mode.
+l.85 #
+      # Appendix: Figures
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+/Users/romadanovskiy/Documents/GitHub/Coursera/DataScience-JHU-RM/Project/MT-mp
+g.md:85: You can't use `macro parameter character #' in vertical mode.
+l.85 ##
+        Appendix: Figures
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+)
+! Emergency stop.
+<*> ...ursera/DataScience-JHU-RM/Project/MT-mpg.md
+                                                  
+*** (job aborted, no legal \end found)
+
+!  ==> Fatal error occurred, no output PDF file produced!

@@ -1,0 +1,11 @@
+base
+data.table
+ggplot2
+dplyr
+scales
+stringdist
+lattice
+RColorBrewer
+latticeExtra
+vwr
+gridExtra

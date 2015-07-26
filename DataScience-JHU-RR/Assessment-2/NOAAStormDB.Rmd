@@ -1,0 +1,127 @@
+---
+title: "NOAA Strom Database Analysis"
+author: "MiRo"
+date: "15 Jul 2015"
+output: html_document
+---
+
+# Storms 
+
+Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.
+
+This project involves exploring the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database. This database tracks characteristics of major storms and weather events in the United States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage.
+
+# Quick summary  
+In this report, we aim to analyze the impact of different weather events on public health and economy based on the storm database collected from the U.S. National Oceanic and Atmospheric Administration's (NOAA) from 1950 - 2011. We will use the estimates of fatalities, injuries, property and crop damage to decide which types of event are most harmful to the population health and economy. 
+From these data, we found that tornado and heat are most harmful with respect to population health, while water events are the most fatalities densitive. 
+Flood, storm, hurricane have the greatest economic consequences.
+
+##Loading requirements and data.
+```{r Preparation, cache=TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+packages <- c("data.table", "ggplot2", "dplyr", "scales", "vwr", "gridExtra")
+sapply(packages, library, character.only=TRUE, quietly=TRUE)
+
+dataFilePath <- paste(getwd(), "/stormData.csv", sep="")
+
+# dt <- data.table(read.csv(dataFilePath))
+names(dt) <- tolower(names(dt))
+dt$evtype <- tolower(dt$evtype)
+dt$bgn_date <- as.Date(dt$bgn_date, format = "%m/%d/%Y")
+```
+
+*Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+
+*Across the United States, which types of events have the greatest economic consequences?
+
+Harmness of population health would be a measure of fatalities and injures have been made during events.
+
+##Data processing sectoin
+
+```{r PrepareData, message=FALSE, warning=FALSE}
+
+mainNotExplTypes <- c("thunderstorm", "tornado", "flood", "snow", "wind", "cold", "surf", "storm", "heat", "rip")
+
+getCost <- function(numV, charV){
+  mult <- rep(1, length(charV))
+  for (i in 1:length(charV)) {
+    mult[i] <- switch (charV[i],
+      k = 10^3,
+      m = 10^6,
+      b = 10^9,
+      1
+    )
+  }
+  res <- numV * mult
+  res
+}
+
+#getCost(c(1,2,4), c("k", "", "0"))
+
+harmDt <- dt %>% select(bgn_date, evtype, fatalities, injuries, propdmg, propdmgexp, cropdmg, cropdmgexp) %>% mutate(date = as.Date(bgn_date, format="%m/%d/%Y"), evtype = as.factor(evtype), propdmgexp = tolower(propdmgexp), cropdmgexp = tolower(cropdmgexp), dmg = getCost(propdmg, propdmgexp)+getCost(cropdmg, cropdmgexp)) %>% select(-bgn_date)
+
+#summary(harmDt)
+```
+
+##Results
+###Top total fatalities during last 64 years.
+```{r Fatalities, echo = FALSE, message=FALSE, warning=FALSE, fig.width= 9}
+fatalDt <- harmDt %>% select(fatalities, evtype) %>% group_by(evtype) %>% summarise(evFatalities = sum(fatalities), evCounts = n()) %>% filter(evFatalities > 0) %>% mutate(mainCategory = evtype, fatalDens = evFatalities/evCounts)
+
+uniqueEventTypes <- unique(as.character(fatalDt$evtype))
+for (mainEvType in mainNotExplTypes) {
+ dict <- uniqueEventTypes[grepl(mainEvType, uniqueEventTypes)] 
+ fatalDt[evtype %in% dict]$mainCategory = mainEvType
+}
+uniqueMainEventTypes <- unique(as.character(fatalDt$mainCategory))
+
+#png("fatalities.png",height=400,width=1000)
+
+topsRows <- 5
+
+plotData <- fatalDt %>% group_by(mainCategory) %>% summarise(evFatalities = sum(evFatalities)) %>% arrange(evFatalities, order("desc")) %>% top_n(topsRows, evFatalities)
+g1 <- ggplot(plotData, aes(reorder(mainCategory, evFatalities), evFatalities), wid) + geom_bar(stat = "identity", fill = "darkblue") + coord_flip() + theme_grey() + ylab("Total fatalities") + xlab("") + ggtitle("Total fatalities since 1950") 
+plotData <- fatalDt %>% group_by(mainCategory) %>% summarise(evFatalDens = sum(evFatalities)/sum(evCounts)) %>% arrange(evFatalDens, order("desc")) %>% top_n(topsRows, evFatalDens)
+g2 <- ggplot(plotData, aes(reorder(mainCategory, evFatalDens), evFatalDens)) + geom_bar(stat = "identity", fill = "darkgrey") + coord_flip() + theme_grey() + ylab("Fatality density") + xlab("") + ggtitle("Fatalities per event")
+
+grid.arrange(g1, g2, ncol = 2)
+
+#dev.off()
+```
+
+###Top total injures during last 64 years.
+```{r Injures, echo = FALSE, message=FALSE, warning=FALSE, fig.width= 9}
+injDt <- harmDt %>% select(injuries, evtype) %>% group_by(evtype) %>% summarise(evInjuries = sum(injuries), evCounts = n()) %>% filter(evInjuries > 0) %>% mutate(mainCategory = evtype, injuriesDens = evInjuries/evCounts)
+
+uniqueEventTypes <- unique(as.character(injDt$evtype))
+for (mainEvType in mainNotExplTypes) {
+ dict <- uniqueEventTypes[grepl(mainEvType, uniqueEventTypes)] 
+ injDt[evtype %in% dict]$mainCategory = mainEvType
+}
+uniqueMainEventTypes <- unique(as.character(injDt$mainCategory))
+
+plotData <- injDt %>% group_by(mainCategory) %>% summarise(evInjuries = sum(evInjuries)) %>% arrange(evInjuries, order("desc")) %>% top_n(10, evInjuries)
+g1 <- ggplot(plotData, aes(reorder(mainCategory, evInjuries), evInjuries)) + geom_bar(stat = "identity", fill = "darkblue") + coord_flip() + theme_grey() + ylab("Total injuries") + xlab("") + ggtitle("Total injuries since 1950")
+
+plotData <- injDt %>% group_by(mainCategory) %>% summarise(evInjuriesDens = sum(evInjuries)/sum(evCounts)) %>% arrange(evInjuriesDens, order("desc")) %>% top_n(10, evInjuriesDens)
+g2 <-ggplot(plotData, aes(reorder(mainCategory, evInjuriesDens), evInjuriesDens)) + geom_bar(stat = "identity", fill = "darkgrey") + coord_flip() + theme_grey() + ylab("Injury density") + xlab("") + ggtitle("Injuries per event")
+grid.arrange(g1, g2, ncol = 2)
+```
+
+###Top economics damage reasons for last 64 years.
+```{r Damage, echo = FALSE, message=FALSE, warning=FALSE, fig.width= 9}
+dmgDt <- harmDt %>% select(dmg, evtype) %>% group_by(evtype) %>% summarise(evDmg = sum(dmg), evCounts = n()) %>% filter(evDmg > 0) %>% mutate(mainCategory = evtype, dmgDens = evDmg/evCounts)
+
+uniqueEventTypes <- unique(as.character(dmgDt$evtype))
+for (mainEvType in mainNotExplTypes) {
+ dict <- uniqueEventTypes[grepl(mainEvType, uniqueEventTypes)] 
+ dmgDt[evtype %in% dict]$mainCategory = mainEvType
+}
+uniqueMainEventTypes <- unique(as.character(dmgDt$mainCategory))
+
+plotData <- dmgDt %>% group_by(mainCategory) %>% summarise(evDmg = sum(evDmg)) %>% arrange(evDmg, order("desc")) %>% top_n(10, evDmg)
+g1 <- ggplot(plotData, aes(reorder(mainCategory, evDmg), evDmg)) + geom_bar(stat = "identity", fill = "darkblue") + coord_flip() + theme_grey() + ylab("Total property damage") + xlab("") + ggtitle("Total property damage since 1950")
+
+plotData <- dmgDt %>% group_by(mainCategory) %>% summarise(evDmgDens = sum(evDmg)/sum(evCounts)) %>% arrange(evDmgDens, order("desc")) %>% top_n(10, evDmgDens)
+g2 <- ggplot(plotData, aes(reorder(mainCategory, evDmgDens), evDmgDens)) + geom_bar(stat = "identity", fill = "darkgrey") + coord_flip() + theme_grey() + ylab("Property damage density") + xlab("") + ggtitle("Property damage per event")
+grid.arrange(g1, g2, ncol = 2)
+```

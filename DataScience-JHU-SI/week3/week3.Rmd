@@ -1,0 +1,184 @@
+---
+title: "week3Quiz"
+author: "MiRo"
+date: "17 Jul 2015"
+output: html_document
+---
+
+###Loading requirements and data.
+```{r Preparation, cache=TRUE, warning=FALSE, message=FALSE}
+packages <- c("data.table", "ggplot2", "dplyr", "scales")
+sapply(packages, require, character.only=TRUE, quietly=TRUE)
+
+```
+
+### Likelihood
+Assume the data arises from a family of distributions indexed by a parameter
+that represents a useful summary of the data.
+Use the likelihood to perform inference regarding the unknown parameter.
+Definition: given a statistical probability mass function or density, f(x, theta), 
+where theta is an unknown parameter, the likelihood is f viewed as a function of 
+theta for a fixed, observed value of x.
+```{r}
+# plot likelihood
+pvals <- seq(0, 1, length = 1000)
+plot(pvals, dbinom(3, 4, pvals) / dbinom(3, 4, 3/4), type = "l", frame = F, 
+     lwd = 3, xlab = "p", ylab = "likelihood / max likelihood")
+
+lambda <- seq(0, .2, length = 1000)
+likelihood <- dpois(5, 94 * lambda) / dpois(5, 5)
+plot(lambda, likelihood, frame = F, lwd = 3, type = "l", xlab = expression(lambda))
+lines(rep(5/94, 2), 0 : 1, col = "red", lwd = 3)
+lines(range(lambda[likelihood > 1 / 16]), rep(1 / 16, 2), lwd = 2)
+lines(range(lambda[likelihood > 1 / 8]), rep(1 / 8, 2), lwd = 2)
+```
+
+### Bayesian inference
+Exploring the beta density
+```{r, include=FALSE}
+# library(manipulate)
+# pvals <- seq(0.01, 0.99, length = 1000)
+# manipulate(
+#     plot(pvals, dbeta(pvals, alpha, beta), type = "l", lwd = 3, frame = F),
+#     alpha = slider(0.01, 10, initial = 1, step = .5),
+#     beta = slider(0.01, 10, initial = 1, step = .5)
+# )
+# 
+# pvals <- seq(0.01, 0.99, length = 1000)
+# x <- 13
+# n <- 20
+# myPlot <- function(alpha, beta) {
+#     plot(0 : 1, 0 : 1, type = "n", xlab = "p", ylab = "", frame = F)
+#     lines(pvals, dbeta(pvals, alpha, beta) / max(dbeta(pvals, alpha, beta)),
+#           lwd = 3, col = "darkred")
+#     lines(pvals, dbinom(x, n, pvals) / dbinom(x, n, x/n), 
+#           lwd = 3, col = "darkblue")
+#     lines(pvals, dbeta(pvals, alpha+x, beta+(n-x))/max(dbeta(pvals, alpha+x, beta+(n-x))), 
+#           lwd = 3, col = "darkgreen")
+#     title("red = prior, green = posterior, blue = likelihood")
+# }
+# manipulate(
+#     myPlot(alpha, beta),
+#     alpha = slider(0.01, 100, initial = 1, step = .5),
+#     beta = slider(0.01, 100, initial = 1, step = .5)
+# )
+```
+
+### HPD intervals
+```{r}
+library(binom)
+binom.bayes(13, 20, type = "highest")
+
+pvals <- seq(0.01, 0.99, length = 1000)
+x <- 13
+n <- 20
+myPlot2 <- function(alpha, beta, cl) {
+    plot(pvals, dbeta(pvals, alpha+x, beta+(n-x)), type = "l", 
+         lwd = 3, xlab = "p", ylab = "", frame = F)
+    out <- binom.bayes(x, n, type = "highest",
+                       prior.shape1 = alpha,
+                       prior.shape2 = beta,
+                       conf.level = cl)
+    p1 <- out$lower
+    p2 <- out$upper
+    lines(c(p1, p1, p2, p2), c(0, dbeta(c(p1, p2), alpha+x, beta+(n-x)), 0),
+          type = "l", lwd = 3, col = "darkred")
+}
+# manipulate(
+#     myPlot2(alpha, beta, cl),
+#     alpha = slider(0.01, 10, initial = 1, step = .5),
+#     beta = slider(0.01, 10, initial = 1, step = .5),
+#     cl = slider(0.01, 0.99, initial = 0.95, step = .01)
+# )
+```
+
+
+### Tow group intervals
+x_oc = 132.86, s_oc = 15.34; x_c = 127.44, s_c = 18.23
+```{r}
+sp <- sqrt((7*15.34^2 + 20*18.23^2) / (8 + 21 - 2))
+132.86 - 127.44 + c(-1, 1)*qt(.975, 27) * sp * (1 / 8 + 1 / 21)^.5
+
+data(sleep)
+x1 <- sleep$extra[sleep$group == 1]
+x2 <- sleep$extra[sleep$group == 2]
+n1 <- length(x1)
+n2 <- length(x2)
+sp <- sqrt( ((n1 - 1) * sd(x1)^2 + (n2 - 1) * sd(x2)^2) / (n1 + n2 - 2))
+md <- mean(x1) - mean(x2)
+semd <- sp * sqrt(1 / n1 + 1 / n2)
+md + c(-1, 1) * qt(.975, n1 + n2 - 2) * semd
+t.test(x1, x2, paired = F, var.equal = T)$conf
+# t.test(x1, x2, paired = F, var.equal = F)$conf
+```
+
+### Hypothesis testing
+Usage: Make decisions using data
+```{r include=FALSE}
+# T test in R
+# library(UsingR)
+# data(father.son)
+# t.test(father.son$sheight - father.son$fheight)
+```
+# Quiz Week 3 Statistical Inference
+
+## Question 1
+In a population of interest, a sample of 9 men yielded a sample average brain volume of 1,100cc and a standard deviation of 30cc. What is a 95% Student's T confidence interval for the mean brain volume in this new population?
+```{r}
+sd<-30
+n<-9
+mean<-1100
+alpha <- 0.05
+mean + c(1,-1)*qt(1-alpha/2, n-1)*sd/sqrt(n)
+```
+
+
+## Question 4
+In a study of emergency room waiting times, investigators consider a new and the standard triage systems. To test the systems, administrators selected 20 nights and randomly assigned the new triage system to be used on 10 nights and the standard system on the remaining 10 nights. They calculated the nightly median waiting time (MWT) to see a physician. The average MWT for the new system was 3 hours with a variance of 0.60 while the average MWT for the old system was 5 hours with a variance of 0.68. Consider the 95% confidence interval estimate for the differences of the mean MWT associated with the new system. Assume a constant variance. What is the interval? Subtract in this order (New System - Old System).
+```{r}
+NewSysNigths <- 10
+OldSysNigths <- 10
+meanNewSys <- 3
+varNewSys <- 0.6
+meanOldSys <- 5
+varOldSys <- 0.68
+alpha <- 0.05
+
+sp_2 <- ((NewSysNigths - 1)*varNewSys + (OldSysNigths - 1)*varOldSys) / (NewSysNigths + OldSysNigths - 2)
+sp <- sqrt(sp_2)
+ts <- qt(1 - (alpha/2), NewSysNigths + OldSysNigths - 2)
+round((meanNewSys - meanOldSys) + c(-1, 1) * ts * sp * (sqrt(1/NewSysNigths + 1/OldSysNigths)), 2) 
+```
+
+## Question 6
+To further test the hospital triage system, administrators selected 200 nights and randomly assigned a new triage system to be used on 100 nights and a standard system on the remaining 100 nights. They calculated the nightly median waiting time (MWT) to see a physician. The average MWT for the new system was 4 hours with a standard deviation of 0.5 hours while the average MWT for the old system was 6 hours with a standard deviation of 2 hours. Consider the hypothesis of a decrease in the mean MWT associated with the new treatment. What does the 95% independent group confidence interval with unequal variances suggest vis a vis this hypothesis? (Because there's so many observations per group, just use the Z quantile instead of the T.)
+```{r}
+NewSysNigths <- 100
+OldSysNigths <- 100
+meanNewSys <- 6
+meanOldSys <- 4
+sdNewSys <- 2
+sdOldSys <- 0.5
+alpha <- 0.05
+sp_2 <- ((NewSysNigths - 1)*sdNewSys^2 + (OldSysNigths - 1)*sdOldSys^2) / (NewSysNigths + OldSysNigths - 2)
+sp <- sqrt(sp_2)
+ts <- qt(1 - (alpha/2), NewSysNigths + OldSysNigths - 2)
+round((meanNewSys - meanOldSys) + c(-1, 1) * ts * sp * (sqrt(1/NewSysNigths + 1/OldSysNigths)), 2) 
+```
+
+##Question 7
+Suppose that 18 obese subjects were randomized, 9 each, to a new diet pill and a placebo. Subjects’ body mass indices (BMIs) were measured at a baseline and again after having received the treatment or placebo for four weeks. The average difference from follow-up to the baseline (followup - baseline) was −3 kg/m2 for the treated group and 1 kg/m2 for the placebo group. The corresponding standard deviations of the differences was 1.5 kg/m2 for the treatment group and 1.8 kg/m2 for the placebo group. Does the change in BMI over the four week period appear to differ between the treated and placebo groups? Assuming normality of the underlying data and a common population variance, calculate the relevant *90%* t confidence interval. Subtract in the order of (Treated - Placebo) with the smaller (more negative) number first.
+```{r}
+nPill <- 9
+nPlacebo <- 9
+meanPill <- -3
+meanPlacebo <- 1
+sdPill <- 1.5
+sdPlacebo <- 1.8
+alpha <- 0.1
+sp_2 <- ((nPill - 1)*sdPill^2 + (nPlacebo - 1)*sdPlacebo^2) / (nPill + nPlacebo - 2)
+sp <- sqrt(sp_2)
+ts <- qt(1 - (alpha/2), nPill + nPlacebo - 2)
+round((meanPill - meanPlacebo) + c(-1, 1) * ts * sp * (sqrt(1/nPill + 1/nPlacebo)), 2) 
+```
+

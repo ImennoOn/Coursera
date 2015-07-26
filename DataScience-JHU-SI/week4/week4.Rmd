@@ -1,0 +1,187 @@
+---
+title: "DataScience-JHU-SI-W4"
+author: "MiRo"
+date: "21 Jul 2015"
+output: html_document
+---
+
+
+##Loading requirements and data.
+```{r Preparation, cache=TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+packages <- c("data.table", "ggplot2", "dplyr", "scales", "vwr", "gridExtra", "stats")
+sapply(packages, library, character.only=TRUE, quietly=TRUE)
+```
+
+## Power
+Understanding the main concepts of valuating 2 distributions or significance of considering value.
+```{r}
+mu0 <- 30
+mua <- 32
+sigma <- 4
+n <- 16
+alpha <- 0.05
+z <- qnorm(1-alpha)
+pnorm(mu0 + z * sigma / sqrt(n), mean=mua, sd = sigma/sqrt(n), lower.tail = FALSE)
+
+library(manipulate)
+mu0 <- 30
+plot <- function(sigma, mua, n, alpha) {
+  plot <- ggplot(data.frame(mu=c(27,36)), aes(x=mu))
+  plot <- plot + stat_function(fun=dnorm, geom = "line",
+                               args = list(mean = mu0, sd = sigma/sqrt(n)),
+                               size = 2, col = "red")
+  plot <- plot + stat_function(fun=dnorm, geom = "line",
+                               args = list(mean=mua, sd = sigma/sqrt(n)),
+                               size = 2, col = "blue")
+  xits <- mu0 + qnorm(1-alpha) * sigma / sqrt(n)
+  plot <- plot + geom_vline(xintercept = xits, size = 3)
+  plot
+}
+manipulate(
+  plot(sigma, mua, n, alpha),
+  sigma = slider(1,10,step=1,initial = 1),
+  mua = slider(28,34, step=1,initial = 31),
+  n = slider(2, 256, step = 16, initial = 64),
+  alpha = slider(0.05, 0.40, step=0.05, initial = 0.05)
+)
+
+# Какую разницу мы можем различить при силе в 0.8 и сигме 10 при 100 наблюдениях
+power.t.test(n = 100, sd = 10, power = 0.8, type = "paired", alt = "one.sided")$delta
+```
+
+## Тестирование нескольких гипотез
+```{r}
+set.seed(10001)
+pValues <- rep(NA, 1000)
+n <- 30
+for(i in 1:1000){
+  x <- rnorm(n)
+  if(i<=500) {y <- rnorm(n)} else {y <- rnorm(n, mean=2*x)}
+  pValues[i] <- summary(lm(y~x))$coeff[2,4]
+  if (i==1000) {summary(lm(y~x))}
+}
+trueStatus <- rep(c("zero", "not zero"), each = 500)
+table(pValues < 0.05, trueStatus)
+
+# Controls FWER
+table(p.adjust(pValues, method = "bonferroni") < 0.05, trueStatus)
+
+#Controls FDR
+table(p.adjust(pValues, method = "BH") < 0.05, trueStatus)
+
+par(mfrow=c(1,2))
+plot(pValues, p.adjust(pValues,method = "bonferroni"), type = "p", pch =19)
+plot(pValues, p.adjust(pValues,method = "BH"), type = "p", pch =19)
+```
+
+
+## Bootstraping
+```{r}
+library(UsingR)
+data(father.son)
+x <- father.son$sheight
+n <- length(x)
+B <- 10000
+resamples <- matrix(sample(x, n*B, replace = TRUE), B, n)
+resampledMedians <- apply(resamples, 1, median)
+```
+
+# Quiz
+## Question 1
+A pharmaceutical company is interested in testing a potential blood pressure lowering medication. Their first examination considers only subjects that received the medication at baseline then two weeks later. The data are as follows (SBP in mmHg)
+Consider testing the hypothesis that there was a mean reduction in blood pressure? Give the P-value for the associated two sided T test.
+```{r}
+pharmCompDF <- data.frame(baseline = c(140, 138, 150, 148, 135), 
+                          week2 = c(132, 135, 151, 146, 130))
+t <- t.test(pharmCompDF$baseline, pharmCompDF$week2, alternative = "two.sided", paired = T)
+t$p.value
+```
+
+## Question 2
+A sample of 9 men yielded a sample average brain volume of 1,100cc and a standard deviation of 30cc. What is the complete set of values of μ0 that a test of H0:μ=μ0 would fail to reject the null hypothesis in a two sided 5% Students t-test?
+```{r}
+mean <- 1100
+sampleSD <- 30
+n <- 9
+alpha <- 0.05
+ts <- qt(1-alpha/2, n-1)
+mean + c(-1,1)*ts*sampleSD/sqrt(n)
+```
+
+## Question 3
+Researchers conducted a blind taste test of Coke versus Pepsi. Each of four people was asked which of two blinded drinks given in random order that they preferred. The data was such that 3 of the 4 people chose Coke. Assuming that this sample is representative, report a P-value for a test of the hypothesis that Coke is preferred to Pepsi using a one sided exact test.
+```{r}
+binom.test(x = 3, n = 4, p = .5, alt = "greater")$p.value
+```
+
+## Question 4
+Infection rates at a hospital above 1 infection per 100 person days at risk are believed to be too high and are used as a benchmark. A hospital that had previously been above the benchmark recently had 10 infections over the last 1,787 person days at risk. About what is the one sided P-value for the relevant test of whether the hospital is *below* the standard?
+```{r}
+daysTested <- 100
+probTested <- 1
+p <- probTested/daysTested
+
+daysObs <- 1787
+probObs <- 10
+pO <- probObs/daysObs
+
+se <- sqrt(p * (1-p) / daysObs)
+z <- (p-pO) / se
+pnorm(z, lower.tail = F)
+```
+
+## Question 5
+Suppose that 18 obese subjects were randomized, 9 each, to a new diet pill and a placebo. Subjects’ body mass indices (BMIs) were measured at a baseline and again after having received the treatment or placebo for four weeks. The average difference from follow-up to the baseline (followup - baseline) was −3 kg/m2 for the treated group and 1 kg/m2 for the placebo group. The corresponding standard deviations of the differences was 1.5 kg/m2 for the treatment group and 1.8 kg/m2 for the placebo group. Does the change in BMI appear to differ between the treated and placebo groups? Assuming normality of the underlying data and a common population variance, give a pvalue for a two sided t test.
+```{r}
+nPill <- 9
+nPlacebo <- 9
+df <- nPill + nPlacebo - 2
+meanPill <- -3
+meanPlacebo <- 1
+sdPill <- 1.5
+sdPlacebo <- 1.8
+alpha <- 0.1
+
+pooledVar <- (sdPill^2 * nPill + sdPlacebo^2 * nPlacebo)/df
+se.diff <- sqrt(pooledVar/nPill + pooledVar/nPlacebo)
+tstat <- (meanPill - meanPlacebo) / se.diff
+pValue <- 2*pt(tstat, df = df)
+pValue
+```
+
+## Question 6
+Brain volumes for 9 men yielded a 90% confidence interval of 1,077 cc to 1,123 cc. Would you reject in a two sided 5% hypothesis test of H0:μ=1,078?
+```{r}
+mu <- 1078
+alpha <- 0.05
+n <- 9
+brainRange <- c(1077,1123)
+mu0 <- mean(brainRange)
+sd <- (mu0 - min(brainRange))/(qt(1-0.1/2,n-1)/sqrt(n))
+
+mu > mu0 - 1 * qt(1-alpha/2, n-1) * sd / sqrt(n)
+```
+
+## Question 7
+Researchers would like to conduct a study of 100 healthy adults to detect a four year mean brain volume loss of .01 mm3. Assume that the standard deviation of four year volume loss in this population is .04 mm3. About what would be the power of the study for a 5% one sided test versus a null hypothesis of no volume loss?
+```{r}
+#H0 mu0=0
+alpha <- 0.05
+n <- 100
+delta <- 0.01
+sd <- 0.04
+testLabel <- "one.sided"
+
+power.t.test(n = n, delta = delta, sd = sd, type = "one.sample", alt = testLabel)$power
+```
+
+## Question 8
+Researchers would like to conduct a study of n healthy adults to detect a four year mean brain volume loss of .01 mm3. Assume that the standard deviation of four year volume loss in this population is .04 mm3. About what would be the value of n needded for 90% power of type one error rate of 5% one sided test versus a null hypothesis of no volume loss?
+```{r}
+power.t.test(power = 0.9, delta = delta, sd = sd, type = "one.sample", alt = testLabel)$n
+```
+
+## Question 9
+As you increase the type one error rate, α, what happens to power?
+Since you are moving line of confidence right, the power will increases.
+
