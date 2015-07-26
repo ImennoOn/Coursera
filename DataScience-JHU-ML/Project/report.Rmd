@@ -1,7 +1,8 @@
 ---
-title: Practical Machine Learning Project
+title: "Practical Machine Learning Project"
 author: "MiRo"
 output:
+  pdf_document: default
   html_document:
     fig_height: 9
     fig_width: 9
