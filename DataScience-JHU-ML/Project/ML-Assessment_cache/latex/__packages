@@ -1,0 +1,12 @@
+base
+data.table
+ggplot2
+dplyr
+scales
+lattice
+caret
+rpart
+randomForest
+corrplot
+rpart.plot
+xtable

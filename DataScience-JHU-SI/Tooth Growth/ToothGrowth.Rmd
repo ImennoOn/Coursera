@@ -1,36 +1,49 @@
 ---
 title: "Tooth Growth Analysis"
-author: "MiRo"
-date: "22 Jul 2015"
-output: pdf_document
+author: "Mikhail Romadanovskiy"
+date: "20 Jul 2015"
+output: rmarkdown::tufte_handout
 ---
 
+# Overview
+\newthought{The ToothGrowth data}[^dataset] consists of measurements of the mean length of the odontoblast cells harvested from 60 guinea pigs. These animals were fed a diet of 6 Vitamin C supplements. The Vitamin C was administered either in the form of Orange Juice (OJ) or chemically pure Vitamin C (VC). Each animal received the same daily dosage of Vitamin C
+consistently.
 
-## Excercise
-We're going to analyze ToothGrowth data in the R datasets package. 
-* Load the ToothGrowth data and perform some basic exploratory data analyses 
-* Provide a basic summary of the data.
-* Use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose. (Only use the techniques from class, even if there's other approaches worth considering)
-* State your conclusions and the assumptions needed for your conclusions. 
+This study performs an exploration of this data. The goal of the exploration is to see if we
+can reasonably infer that either the method of administering vitamin C or the dosage has an
+impact on the size of odontoblast cells.
 
-```{r Preparation, cache=TRUE, warning=FALSE, message=FALSE, echo=FALSE, results='hide'}
+```{r Preparation, cache=TRUE, warning=FALSE, eval=TRUE, message=FALSE, echo=FALSE, results='hide'}
 ##Loading requirements and data.
-packages <- c("data.table", "ggplot2", "dplyr", "caret")
-sapply(packages, library, character.only=TRUE, quietly=TRUE)
+packages <- c("data.table", "ggplot2", "dplyr", "xtable","knitr")
+# sapply(packages, library, character.only=TRUE, quietly=TRUE)
+sapply(packages, require, character.only=TRUE, quietly=TRUE)
+knitr::opts_chunk$set(echo=FALSE, cache=TRUE)
+options(xtable.comment = FALSE)
+options(xtable.booktabs = TRUE)
 ```
 
-## Data description
-The response is the length of odontoblasts (teeth) in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, and 2 mg) with each of two delivery methods (orange juice or ascorbic acid).
-
 ## Loading and preparing data
-```{r LoadingData, warning=FALSE}
+For starters, let's run a summary of ToothGrowth to see what the contents of the dataset
+are.
+```{r LoadingData, warning=FALSE, results='asis'}
 data("ToothGrowth")
-summary(ToothGrowth)
+xtable(summary(ToothGrowth),caption = "ToothGrowth Summary")
+```
+And true to the data description, we can see that there are 60 observations with two
+supplements and three dosages.
+
+From this quick analysis we can determine that there are two qualitative variables, the
+supplement and dosage (supp and dose). And there is one quantitative variable; len.
+Finally, let's compute some descriptive statistics on the quantitative variable.
+```{r results='asis'}
+x<-data.frame(mean=mean(ToothGrowth$len),var= var(ToothGrowth$len))
+xtable(x)
 ```
 
 ## Data discovery
 Plotting ToothGrowth data to have a quick overview.
-```{r fig.width=9, fig.height=6}
+```{r fig.width=9, fig.height=5, fig.cap = "Data overview", fig.fullwidth = TRUE}
 gplot <- ggplot(ToothGrowth, aes(x=as.factor(dose), y=len, fill=supp)) +
   geom_violin(scale = "area") +
   facet_grid(. ~ supp) +
@@ -38,18 +51,22 @@ gplot <- ggplot(ToothGrowth, aes(x=as.factor(dose), y=len, fill=supp)) +
   ylab("Tooth length") +
   guides(fill=guide_legend(title="Supplement type")) +
   scale_fill_brewer(palette="Set1") +
-  theme_bw()
+  theme_bw(base_size = 12)
 gplot
 ```
 Since intervals are not intersect, we could say that there are singificant difference 
 in tooth lenth depends on dosage. We could even build a linear model to discribe this 
-dependence, but not in this time.
+dependence, but not there is no need to do it for that assessment.
+The figure above seems to indicate that the dosage is the most important factor in
+determining the cell size. This assumption is based on the means for both OJ and VC being
+26 microns when the dosage is 2.0.
+\pagebreak
 
 ## Testing delivery methods
 Now our aim is to test how tooth lenght depends on dosage and delivery method.
 Is there any significant difference between these methods?
-For every dosage we will take a t-test to compare.
-```{r fig.width=9, fig.height=5}
+For every dosage t-test has been done there.
+```{r fig.width=9, fig.height=5, fig.cap = "Data overview", fig.fullwidth = TRUE}
 meansDT <- ToothGrowth  %>% group_by(supp, dose) %>% 
   summarise(means=mean(len)) %>% select(means, supp, dose)
 gplot <- ggplot(ToothGrowth, aes(x=len, fill=supp)) +
@@ -63,9 +80,11 @@ gplot <- ggplot(ToothGrowth, aes(x=len, fill=supp)) +
   ylab("Freq") +
   guides(fill=guide_legend(title="Supplement type")) +
   scale_fill_brewer(palette="Set1") +
-  theme_bw()
+  theme_bw(base_size = 12)
 gplot
+```
 
+```{r}
 alpha <- 0.05
 for (selDose in unique(ToothGrowth$dose)) {
   vcSet <- ToothGrowth %>% filter(supp=="VC", dose == selDose)
@@ -77,4 +96,15 @@ for (selDose in unique(ToothGrowth$dose)) {
 }
 ```
 
-For dosages 0.5 and 1 there are 95% significant difference in resulting tooth lenth. 
+# Assumptions and Conclusions
+We can conclude from this analysis that some types of therapies produces better results in
+growing cells in the teeth of guinea pigs. We have seen that with 95% certainty that
+administering 2.0ml of vitamin C results in better cell growth than the average. In fact, we
+see that in general it is better to administer the vitamins in orange juice as the vitamins can be given at 1.0ml or 2.0. 
+It should be noted, that there is a fundamental assumption in this experiment. That is, the
+vitamin C promotes odontoblast cell growth. There was no control group data, that is,
+guinea pigs that were give no vitamin C. Therefore the conclusions here are drawn
+specifically on orange juice vs pure vitamin; and at very specific levels.
+
+
+[^dataset]: Source: C. I. Bliss (1952) The Statistics of Bioassay. Academic Press.

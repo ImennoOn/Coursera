@@ -1,0 +1,116 @@
+---
+title: "Human Activity Recognition and Predictive Model Fitting"
+author: "Mikhail Romadanovskiy"
+date: "30 Jul 2015"
+output: pdf_document
+---
+# Executive Summary
+
+In this project, the goal will is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the official website [^website] in the section on the Weight Lifting Exercise Dataset.
+
+The goal of the project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. The prediction model will then be used to predict 20 different test cases. 
+
+```{r, Preparation, warning=FALSE, message=FALSE, echo=FALSE, results='hide'}
+packages <- c("data.table", "ggplot2", "dplyr", "scales", "caret", "randomForest", "corrplot", "rpart", "rpart.plot")
+# sapply(packages, library, character.only=TRUE, quietly=TRUE)
+sapply(packages, require, character.only=TRUE, quietly=TRUE)
+
+knitr::opts_chunk$set(echo=TRUE, cache=TRUE, results = "asis")
+options(xtable.comment = FALSE)
+options(xtable.booktabs = TRUE)
+```
+## Import Libraries and Data
+First we want to import the caret and corrplot libraries, and import the dataset. The training data is available for download [here](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv).
+
+## Sanitize
+Through inspection, we can see that there are several columns that mostly consist of NA values (either an explicit NA or an empty string), that serve no purpose for our analysis. Additionally, there are data such as names and times that identify each row. Since we are not interested in the effects of a participant's name, the order of the samples, etc, we can safely remove these.
+```{r}
+path <- paste(getwd(),"/pml-training.csv", sep = "")
+train.raw <- read.csv(path, na.strings=c("","NA"))
+dim(train.raw)
+train <- train.raw[,colSums(is.na(train.raw)) == 0]
+uselessCols <- c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "new_window", "num_window")
+train <- train[,-which(names(train) %in% uselessCols)]
+dim(train)
+```
+
+## Explore Variable Correlations
+
+Now that we've removed useless and poorly gathered data, we'll want to take a look at the remaining variables to see what sort of analysis we can proceed with. We'll start by examining a level of correlation via corrplot:
+
+```{r}
+vars <- train[,-53]
+corrMat <- cor(vars)
+corrplot(corrMat, type="lower", method="color", order="hclust", tl.cex=0.5, tl.col=1)
+```
+
+Because of the high level of correlation here without a clear dividing line as to which could be removed, we have chosen to conduct principle component analysis as a preprosses prior to fitting a model, in order to create orthogonality in the set of predictors.
+
+## Creating our Model
+
+For the purposes of fitting a model and cross-validating, we'll break our initial training set into preliminary training and testing sets.
+
+```{r}
+trainSize <- floor(0.75 * nrow(train))
+set.seed(1238)
+toTrain <- sample(seq_len(nrow(train)), size = trainSize)
+train.train <- train[toTrain, ]
+train.test <- train[-toTrain, ]
+```
+
+We'll then use PCA to preprocess the data and fit the data using a random forest to create our model. We also plot the relative importance of each of the principal components that were derived.
+
+```{r}
+# rfTrain <- train(classe~., 
+#                  data=train.train, 
+#                  method="rf", 
+#                  preProcess = "pca", 
+#                  trControl=trainControl("cv", 10), 
+#                  importance=TRUE)
+
+varImpPlot(rfTrain$finalModel, sort = TRUE, type = 1, pch = 19, col = 1, cex = 1, 
+    main = "Importance of PCA Components")
+```
+
+## Cross Validating and Calculating Errors
+
+We now want to take our model and check the results against our test set. To do this, we can create a confusion matrix of the expected and predicted results of our model:
+
+```{r}
+predictions <- predict(rfTrain, train.test)
+confusion <- confusionMatrix(train.test$classe, predictions)
+confusion$table
+```
+
+Our model looks to be quite accurate without too much overfitting of the data. We can quantify this by calculating the out of sample error as follows:
+
+```{r}
+1 - as.numeric(confusion$overall[1])
+```
+
+
+## Apply Model to Test Data
+Lastly we'll want to apply our model to the test data to obtain predictions. Test data can be found [here](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv).
+
+```{r}
+test.raw <- read.csv("data/pml-testing.csv")
+test <- test.raw[,colSums(is.na(test.raw)) == 0]
+test <- test[,-which(names(test) %in% uselessCols)]
+testpredictions <- predict(rfTrain, test)
+testpredictions
+```
+
+This data will be submitted to the course instructors for review. If there is any inaccuracy, this could be explained by poor model fitting due to out of sample error. Alternatively, not removing reduncancies prior to PCA could potentially introduce minor sources of error into the model. While PCA does a great job of enforcing orthogonality, the "direction" of these are indeed somewhat affected by any correlation in the initial input. Manually inspecting correlations and removing one of a pair of highly correlated (above a threshold) variables could improve the predictive power of this model.
+
+```{r echo=FALSE}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("output/problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(testpredictions)
+```
+
+[^website] Source: http://groupware.les.inf.puc-rio.br/har

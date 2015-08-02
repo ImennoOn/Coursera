@@ -1,0 +1,110 @@
+---
+title: "Motor Trend MPG Analysis"
+author: "Mikhail Romadanovskiy"
+date: "25 Jul 2015"
+output: rmarkdown::tufte_handout
+---
+
+# Executive summary
+In this report, we will analyze `mtcars` data set and explore the relationship between a set of available variables and miles per gallon (MPG). The data was extracted from the 1974 **Motor Trend** US magazine, and comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973–74 models).
+There are 2 main questions to consider: what type of transmission is better for mpg, and how it can be discribed in numeric terms. 
+The t-test shows that mpg performance difference between cars with automatic and manual transmission. And it is about 7 MPG more for cars with manual transmission than those with automatic transmission. 
+We fit several linear regression models and select the one with highest Adjusted R-squared value. Given model shows that cars that are lighter in weight with a manual transmission and cars that are heavier in weight with an automatic transmission will have higher MPG values.
+
+
+## Contex
+You work for Motor Trend, a magazine about the automobile industry. Looking at a data set of a collection of cars, they are interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). They are particularly interested in the following two questions:
+
+* Is an automatic or manual transmission better for MPG
+* Quantify the MPG difference between automatic and manual transmissions
+
+```{r Preparation, warning=FALSE, message=FALSE, echo=FALSE, results='hide'}
+##Loading requirements and data.
+packages <- c("data.table", "ggplot2", "dplyr", "xtable", "gclus", "car")
+# sapply(packages, library, character.only=TRUE, quietly=TRUE)
+sapply(packages, require, character.only=TRUE, quietly=TRUE)
+
+knitr::opts_chunk$set(echo=FALSE, cache=TRUE, results = "asis")
+options(xtable.comment = FALSE)
+options(xtable.booktabs = TRUE)
+
+data(mtcars)
+mtcars[1:3,]
+mtcars$cyl <- as.factor(mtcars$cyl)
+mtcars$vs <- as.factor(mtcars$vs)
+mtcars$am <- as.factor(mtcars$am)
+mtcars$gear <- as.factor(mtcars$gear)
+mtcars$carb <- as.factor(mtcars$carb)
+attach(mtcars)
+
+result <- t.test(mpg~am)
+pVal <- result$p.value
+estVal <- result$estimate
+```
+Since p-Value is pVal the automatic and manual transmissions are from different populations. And the mean for MPG of manual transmitted cars is about result$estimate[[2]] - result$estimate[[1]] more than that of automatic transmitted cars.  
+
+## Regression Model
+Testing simple model.
+```{r SimpleMpgModel}
+simpleMpgModel <- lm(mpg~am, data=mtcars)
+xtable(summary(simpleMpgModel)) # results="hide"
+```
+Simple model can explain **34%** of variance of MPG. Adjusted R-squared value indicates that we need to add other variables to the model to make better predictions.
+
+## Finding proper set of explanation variables
+Let's use all the availible data to make a regression model.
+```{r FullRegressionModel}
+fullModel <- lm(mpg~.,data=mtcars)
+xtable(summary(fullModel))
+```
+Full regression model can explain **78%** of MPG variance, but none of the coeficients are significant.
+We could find more effective set of variables to explain mpg.
+
+```{r EffectiveModel, echo=TRUE, results="hide"}
+stepModel <- step(fullModel, k=log(nrow(mtcars)))
+xtable(summary(stepModel)) # results="hide"
+mpgModel <- lm(mpg~wt+qsec+am, data=mtcars)
+```
+
+Linear model mpg ~ wt + qsec + am - 1 explains **83%** of MPG variance, but consists only significant at 5% s.l. coefficients. 
+
+```{r CompareModels, echo=TRUE}
+xtable(anova(mpgModel, simpleMpgModel, fullModel))
+xtable(confint(mpgModel))
+
+amIntWtModel<-lm(mpg ~ wt + qsec + am + wt:am, data=mtcars)
+xtable(summary(amIntWtModel)) # results hidden
+```  
+
+The measure of how much an observation has effected the estimate of a regression coefficient, we get sum((abs(dfbetas(mpgModel)))>1)
+Therefore, the above analyses meet all basic assumptions of linear regression and well answer the questions.  
+\pagebreak
+
+# Appendix: Figures  
+```{r, fig.width=9, fig.height=8, fig.cap = "Selected Dimensions Pair Graph", fig.fullwidth = TRUE}
+cpairs(mtcars %>% select(mpg, wt, am, qsec) , bg = c("red", "darkblue")[unclass(mtcars$am)],
+       pch=22, gap=.2,
+       upper.panel=panel.smooth,
+       main="Pair Graph of Motor Trend Car Road Tests",
+       cex=0.8, cex.lab=1, cex.axis=0.8, cex.main=1, cex.sub=1)
+```  
+
+```{r, fig.width=9, fig.height=8, fig.cap = "Full Pair Graph", fig.fullwidth = TRUE}
+cpairs(mtcars, bg = c("red", "darkblue")[unclass(mtcars$am)],
+       pch=22, gap=.2, 
+       upper.panel=panel.smooth,
+       main="Pair Graph of Motor Trend Car Road Tests",
+       cex=0.8, cex.lab=1, cex.axis=0.8, cex.main=1, cex.sub=1)
+```  
+
+```{r, fig.width=9, fig.height=8, fig.cap = "Box Plot"}
+boxplot(mpg ~ am, data=mtcars, 
+        xlab="Transmission (0 = Automatic, 1 = Manual)", 
+        ylab="MPG", col="darkblue",
+        main="Boxplot of MPG vs. Transmission")
+```  
+
+```{r, fig.width=9, fig.height=8, fig.cap = "Residuals Analysis", fig.fullwidth = TRUE}
+par(mfrow = c(2, 2))
+plot(mpgModel)
+```

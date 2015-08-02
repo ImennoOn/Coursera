@@ -4,3 +4,6 @@ ggplot2
 dplyr
 lattice
 caret
+xtable
+cluster
+gclus
