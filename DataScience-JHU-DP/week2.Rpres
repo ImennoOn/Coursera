@@ -1,0 +1,33 @@
+Week 2 Developing data products
+========================================================
+author: MiRo
+date: `r date()`
+transition: rotate
+
+First Slide
+========================================================
+
+For more details on authoring R presentations click the
+**Help** button on the toolbar.
+
+- Bullet 1
+- $x^2$
+- Bullet 3
+
+transition: rotate
+
+Slide With Code
+========================================================
+transition: rotate
+Some text and code
+```{r}
+summary(cars)
+```
+
+
+Slide With Plot
+========================================================
+transition: rotate
+```{r, echo=FALSE}
+plot(cars)
+```
