@@ -1,0 +1,692 @@
+---
+title: "Анализ данных Yelp"
+author: "Михаил Ромадановский"
+date: "22 октября 2015"
+output: 
+  BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}  
+---
+
+# Решаемая задача
+
+В рамках обучения по специализации Data Science предлагается поставить и решить
+задачу анализа данных с сайта Yelp. Yelp -- популярная в США платформа обзора
+мест досуга и отдыха. Типичный пример поведения пользователя на сайте разбивается
+на 2 сценария - написание отзыва либо просмотр отзывов о месте планируемого досуга.
+Проект состоит из 6 частей:  
+  1. Получение данных  
+  2. Исследование данных  
+  3. Формулировка задачи  
+  4. Подготовка тестовых моделей  
+  5. Разработка финальной версии алгоритма/модели  
+  6. Презентация результатов исследования  
+На реализацию проекта отводится 7 недель.  
+
+## 1. Данные
+
+Данные публично доступны [^tufte_latex] с сайка Coursera.org и представляют собой 575 MB
+архив содержащий 7 файлов.  
+  1. Agreement (pdf)  
+  2. Challenge Terms (pdf)  
+  3. Business - файл содержит данные по представленным на yelp бизнесам: идендификатор, 
+  расположение, часы работы, описание бизнеса по специфическим атрибутам (наличие Wi-Fi, 
+  разрешение курения, зарядка телефона и пр.), количество ревью, рейтинг и соседствующие 
+  объекты  
+  4. Review - база отзывов, состоит из: идендификаторы ревью, стукача и бизнеса, дату, 
+  оценку эмоциональной окраски(funny, hot, cool)  
+  5. User - база пользователей: имя, количество разданных оценок(funny, usefull, cool), 
+  друзья, количество поклонников, средняя выставляемая оценка, комплименты(funny, hot, cool,
+  photo, like, etc.)  
+  6. Tip - легкая форма review: userId, BusinessId, лайки и даты  
+  7. Checkin - ? что-то, к чему бы не помешала документация  
+  
+## 2. Исследование данных
+
+Для начала сформируем список вопросов/гипотез для исследования данных^[This is a sidenote that
+was entered using a footnote.]:  
+  *Пользователи*  
+  1. Как популярен Yelp по штатам?  
+  2. Какой процент пользователей оставляют отзывы за пределами своего штата? Как от этого
+  зависит количество друзей/оценок пользователя и написанных ревью?  
+  3. Существуют ли "звезды" yelp? Мера "звездности"  
+  4. Пользователи специализируются по видам бизнесов или пишут отзывы по впечатлениям?  
+  5. Зависит ли число друзей от количества ревью?  
+  *Бизнес*  
+  1. Как зависят оценки от количества ревью/лайков?  
+  2. Как на это влияют оценки ревью(funny, useful, cool)?  
+  3. Есть ли зависимсть оценки от атрибутов места(WiFi, smoking area, etc.) по типам бизнесов?  
+  4. Мера успешности бизнесов. Распределение оценок/лайков/кол-ва ревью по отраслям по штатам.  
+  *Ревью*  
+  1. Распределение количества слов в т.ч. по подгруппам (от оценки/типа бизнеса/штата)  
+  2. Возможность характеризовать отзыв по тональности (tm, lsa)  
+  3. Если возможно - по видам бизнеса определить наиболее влиятельные факторы влияющие на оценку   
+  
+```{r "Preload", echo=FALSE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE,
+                      results='asis', cache=TRUE,
+                      fig.width = 12, fig.height = 7, fig.fullwidth = TRUE)
+options(xtable.comment = FALSE)
+options(xtable.booktabs = TRUE)
+```
+
+```{r "Libraries", results='hide'}
+packages <- c("data.table", "ggplot2", "dplyr", "jsonlite", 
+              "doParallel", "caret", "rattle", "xtable")
+sapply(packages, library, character.only=TRUE, quietly=TRUE)
+# http://www.princeton.edu/~otorres/NiceOutputR.pdf
+```
+
+```{r "Read Data"}
+json_user <- readRDS("./RDS/user.RDS")
+json_businesses <- readRDS("./RDS/business.RDS")
+json_review <- readRDS("./RDS/reviews.RDS")
+# json_tip <- readRDS("./tip.RDS")
+# json_checkin <- readRDS("./checkin.RDS")
+
+Quantiles <- c(seq(.6,.9,.1),.95,.99,.999)
+```
+
+```{r "Helpers"}
+printXtable <- function(data2print, digits=2, caption=""){
+  print(xtable(data2print, 
+               digits = digits,
+               caption = caption),
+      type="html",
+      format.args = list(big.mark = " ", decimal.mark = ","),
+      html.table.attributes = "class='table-bordered'",
+      include.rownames=FALSE)
+}
+```
+
+  
+### 2.Пользователи
+**2.П.1.** Как популярен Yelp по штатам?
+```{r "2.П.1."}
+popularityB <- data.table(json_businesses)[,.(business_id,state,open)]
+plottingData <- as.data.frame(popularityB[open==TRUE, .N, by=state][order(rank(N), decreasing=T)])
+ggplot(plottingData, aes(x=reorder(state,-N), y=N)) +
+  geom_bar(stat = "identity", aes(order = desc(N)))
+```
+12 штатов представлены в данных, база далеко не полная.
+
+**2.П.2.** Какой процент пользователей оставляют отзывы за пределами своего штата?
+Как от этого зависит количество друзей/оценок пользователя и написанных ревью?
+```{r "2.П.2."}
+travellersReview <- json_review %>% select(user_id, business_id)
+travellersReview <- merge(as.data.table(travellersReview), popularityB, by="business_id")
+
+pD <- travellersReview[,.N,by=.(user_id,state)][,.N,by=.(user_id)]
+ggplot(pD, aes(N)) +
+  geom_histogram()
+StatesVisited <- sapply(Quantiles, function(x){quantile(pD$N, x)})
+paste0("\n Максимальное количество штатов посещенных yelperom ", max(pD$N),".\n")
+```
+Можно заметить, что путешественников в сервисе немного, в основном ревью написаны 
+людьми в пределах одного(двух) штатов.
+
+**2.П.3.** Существуют ли "звезды" yelp? Мера "звездности"
+Мерой звездности на yelp могли бы служить fanCount, и всевозможные голоса отданные 
+за ревью человека: funny, useful, cool.
+```{r "2.П.3."}
+# По фанатам
+pD <- json_user[, c("fans")][json_user$fans > -1]
+Fans <- sapply(Quantiles, function(x){quantile(pD,x)})
+
+# По друзьям
+pD <- json_user[,c("user_id", "friends")]
+pD$friendsCount <- sapply(pD$friends, function(x) { length(unlist(x))})
+Friends <-  sapply(Quantiles, function(x){quantile(pD$friendsCount,x,names = F)})
+
+# По отклику на ревью
+pD <- json_review[, c("user_id")]
+votes <- json_review$votes
+names(votes) <- c("funny","useful","cool")
+pD <- data.table(cbind(user_id = pD,
+                       votes))
+funnyTop <- pD[,.(count=sum(funny)), by=user_id]
+usefulTop <- pD[,.(count=sum(useful)), by=user_id]
+coolTop <- pD[,.(count=sum(cool)), by=user_id]
+
+printXtable(data.frame(Quantile = Quantiles,
+                       StatesVisited,
+                       Fans,
+                       Friends,
+                       Funny = sapply(Quantiles, function(x){quantile(funnyTop$count,x)}),
+                       Useful = sapply(Quantiles, function(x){quantile(usefulTop$count,x)}),
+                       Cool = sapply(Quantiles, function(x){quantile(coolTop$count,x)})), 
+            digits = 0, "Распределение параметров по ревью")
+```
+Звезды определенно есть и их немного.   
+* По количеству фанатов - менее 0.1% имеют более 117.  
+* По количеству друзей - 5% имеют более 27.  
+* По отклику на отзывы - значимое количество есть у 5%, наиболее "живым" является useful-характеристика  
+
+**2.П.4.** Пользователи специализируются по видам бизнесов или пишут отзывы по впечатлениям?  
+```{r "2.П.4."}
+categories <- levels(as.factor(unlist(json_businesses$categories)))
+# TODO Анализ таблицы users/Categories связанных через reviews
+```
+
+**2.П.5.** Зависит ли число друзей от количества ревью?
+```{r "2.П.5."}
+pD <- json_user[,c("fans","review_count")]
+```
+Корреляция между количество ревью и количество друзей у пользователя составляет `r round(cor(pD$fans, pD$review_count, method = "pearson"), 2)`.  
+
+### 2.Бизнес  
+
+**2.Б.1.** Как зависят оценки от количества ревью/лайков?  
+```{r "2.Б.1."}
+pD <- json_businesses[,c("stars", "review_count")]
+
+printXtable(t(summary(pD$stars)), digits = 2, )
+stargazer::stargazer(broom::glance(t.test(pD$stars-(2+1))), type="html")
+```
+Корреляция между оценкой и количеством ревью **`r round(cor(pD$stars,pD$review_count,method = "pearson"),2)`**.
+Сами оценки starts смешены вправо.  
+
+**2.Б.2.** Как на это влияют оценки ревью(funny, useful, cool)?  
+```{r "2.Б.2."}
+pD <- json_businesses[,c("stars","business_id")]
+votes <- json_review$votes
+names(votes) <- c("funny","useful","cool")
+pD <- merge(pD, cbind(json_review[,c("business_id","review_id","stars")], votes), by="business_id")
+pD <- transform(pD, stars.x=as.factor(pD$stars.x),
+                stars.y=as.factor(pD$stars.y))
+pD <- tidyr::gather(pD, "replay", "n", 5:7)
+ggplot(pD, aes(stars.x, n)) + 
+  geom_jitter() +
+  facet_grid(.~ replay)
+
+# Теперь для оценок в самих ревью
+ggplot(pD, aes(stars.y, n)) + 
+  geom_jitter() + 
+  facet_grid(.~ replay)
+```
+Относительно итоговых оценок бизнеса, ревью с оценкой max-1 наиболее смешны, полезны 
+и/или клевы. Может ли это смещение свидетельствовать об искуственном накручивании счетчика?
+Существует ли группа людей пишущих отзывы с максимальными оценками(но очевидно не очень качественно)? 
+Как видно из 2го графика ревью высоко ценимые читателями имеют положительную корреляцию 
+с величиной оценки. Что кажется логичным - очень понравилось место, поднялось настроение
+и пользователь написал полезный, интересный отзыв. Требуется проверить на значимость такую зависимость.  
+
+**2.Б.3.** Есть ли зависимсть оценки от атрибутов места(WiFi, smoking area, etc.) по типам бизнеса?  
+
+Вопрос непростой, ведь на ~800 типов бизнес приходится порядка 40 атрибутов. Преложим модель
+описания успешности в бизнесе(высокая оценка) от набора атрибутов. Для каждого из типов бизнеса 
+сделать выборку вида оценка~{атрибуты} (а лучше модернизированная оценка, с учетом распределения.
+Или целиком распределение оценок по каждому месту), если оценка значима - показать что нашли в какой
+категории бизнеса. Таким образом можно получить рекомендации по повышению оценки yelp-ерами для типов бизнеса.  
+```{r "2.Б.3."}
+attrs <- json_businesses$attributes
+
+# Приводим данные бизнес атрибутов в единый формат для тренировки модели
+creditCards <- (unlist(sapply(attrs$`Accepts Credit Cards`, function(x){ if(is.null(x)) return(NA) else x}),
+                                recursive = T))
+creditCards <- c(creditCards, rep("",5))
+attrs$CreditCards <- as.factor(creditCards)
+remove(creditCards)
+
+attrs$`Accepts Credit Cards` <- NULL
+
+attrs <- cbind(attrs, data.frame(attrs$Ambience))
+attrs$Ambience <- NULL
+attrs <- cbind(attrs, attrs$`Good For`)
+attrs$`Good For` <- NULL
+attrs <- cbind(attrs, attrs$Parking)
+attrs$Parking <- NULL
+attrs <- cbind(attrs, attrs$Music)
+attrs$Music <- NULL
+attrs <- cbind(attrs, attrs$`Hair Types Specialized In`)
+attrs$`Hair Types Specialized In` <- NULL
+attrs <- cbind(attrs, attrs$`Payment Types`)
+attrs$`Payment Types` <- NULL
+attrs <- cbind(attrs, attrs$`Dietary Restrictions`)
+attrs$`Dietary Restrictions` <- NULL
+attrs$halal <- as.factor(attrs$halal)
+
+attrs <- plyr::colwise(as.factor)(attrs)
+attrs$business_id <- json_businesses$business_id
+attrs$stars_business <- json_businesses$stars
+
+# По категориям бизнеса
+categories <- unique(unlist(json_businesses$categories))
+# Отсюда начать строить цикл по категориям бизнеса в поисках рабочих моделей объясняющих оценку
+categList <- json_businesses$categories
+registerDoParallel(cores = 4)
+categoryLenghts <- foreach(category=categories) %dopar% {
+  rightBusineses <- sapply(categList, function(x){category %in% x})
+  sum(rightBusineses)
+}
+categoryLenghts <- unlist(categoryLenghts)
+# sapply(Quantiles, function(x){quantile(categoryLenghts,x)})
+categories <- data.table(category_name = categories,
+                         categiry_len = categoryLenghts)[order(categiry_len, decreasing = T),]
+stopImplicitCluster()
+
+# businessCateg <- rbind(sapply(json_businesses$business_id, function(x){
+#   businessCategVec <- unlist(json_businesses$categories[json_businesses$business_id == x])
+#   businessCategVec <- categories %in% businessCategVec
+#   return(businessCategVec)
+# }))
+# 
+# businessCateg <- data.table(t(rbind(json_businesses$business_id, json_businesses$stars, businessCateg, attrs)))
+# names(businessCateg) <- c("business_id", "stars.bus", paste("Category.",categories,sep=""))
+# 
+# businessCateg <- full_join(businessCateg, attrs, by="business_id")
+# 
+# reviewsAttrs <- data.table(business_id = json_review$business_id, 
+#                            stars.rev = json_review$stars,
+#                            funny = json_review$votes$funny,
+#                            useful = json_review$votes$useful,
+#                            cool = json_review$votes$cool)
+# 
+# modelData <- full_join(reviewsAttrs, businessCateg, by="business_id")
+# remove(reviewsAttrs, businessCateg,  attrs)
+```
+Максимум в наблюдениях бизнесов принадлежащих категории *`r categories$category_name[[1]]`*.
+
+После того, как нашли самую большую категорию бизнеса попробуем найти в ней объясняющие
+высокие оценки атрибуты  
+```{r "2.Б.3. - 2"}
+category <- categories$category_name[[2]]
+rightBusineses <- attrs[sapply(json_businesses$categories, function(x){category %in% x}),]
+rightBusineses$business_id <- NULL
+rightBusineses <- rightBusineses[, colSums(!is.na(rightBusineses)) != 0]
+
+# Модель предсказания 5 звезд на основе атрибутов места
+rightBusineses <- plyr::colwise(as.numeric)(rightBusineses)
+rightBusineses[is.na(rightBusineses)] <- -1
+rightBusineses$stars_business <- as.factor(rightBusineses$stars_business)
+levels(rightBusineses$stars_business) <- paste0("Mark_",levels(rightBusineses$stars_business))
+trainIndex <- createDataPartition(rightBusineses$stars_business,
+                                  p = .85, list = FALSE)
+
+train <- data.frame(rightBusineses[trainIndex, ])
+test <- data.frame(rightBusineses[-trainIndex, ])
+set.seed(10001)
+
+# Формула для моделей
+featiresList <- names(train)
+featiresList <- featiresList[!featiresList %in% "stars_business"]
+featuresLen <- length(featiresList)
+f <- as.formula(paste("stars_business ~ ",
+                      paste(c(featiresList[c(1:featuresLen)][!featiresList[c(1:featuresLen)] %in% c("RETURN","SIGNAL")]),
+                                        collapse = " + ")))
+# rPart
+registerDoParallel(cores = 7)
+trainControl <- trainControl(method = "repeatedcv",
+                             number = 5,
+                             repeats = 3,
+                             verboseIter = TRUE,
+                             classProbs=T,
+                             allowParallel=T)
+
+rPartFit <- train(f, data = train,
+                  method = "rpart",
+                  # tuneLength сильно влияет на картину, требуется подбор по категориям
+                  tuneLength = 7,
+                  metric = "ROC",
+                  trControl = trainControl)
+
+predictedStars <- predict(rPartFit, test)
+table(predictedStars == test$stars_business)
+fancyRpartPlot(rPartFit$finalModel, main = category)
+stopImplicitCluster()
+
+{
+# Обучаем древовидный алгоритм (15 min)
+# registerDoParallel(cores = 7)
+# trainControl <- trainControl(method = "repeatedcv",
+#                              number = 3,
+#                              repeats = 2,
+#                              verboseIter = TRUE,
+#                              preProcOptions = list(thresh = 0.90))
+# tuneGrid <-  expand.grid(interaction.depth = c(5),
+#                         n.trees = seq(3,3,10)*20,
+#                         shrinkage = 0.1,
+#                         n.minobsinnode = 20)
+# 
+# xgbTreeFit <- train(f, data = train,
+#                     method = "gbm", 
+#                     trControl = trainControl,
+#                     tuneGrid = tuneGrid)
+# 
+# predictStars <- predict(xgbTreeFit, test)
+# table(predictStars == test$stars_business)
+# library(rattle)
+# fancyRpartPlot(xgbTreeFit$finalModel)
+# plot(xgbTreeFit$finalModel)
+# stopImplicitCluster()
+# 
+# Обучаем rf
+# registerDoParallel(cores = 4)
+# trainControl <- trainControl(method = "cv",
+#                              number = 5,
+#                              verboseIter = TRUE)
+# stopImplicitCluster()
+# 
+# Попытаемся обучить нейронную сеть
+# registerDoParallel(cores = 4)
+# l1 <- seq(5,56,5)
+# l2 <- seq(5,26,10)
+# networks.rsmeArray <- foreach (i = l1)  %:%
+#   foreach (j = l2) %dopar% {
+#     nnhl.fit <- neuralnet(f, data = train,
+#                           hidden=c(30,10), 
+#                           linear.output=F, threshold = 0.001)
+#     nnhl.predict <- neuralnet::compute(nnhl.fit, as.matrix(test[,1:70]))
+#     nnhl.predict <- nnhl.predict$net.result
+#     rmse.nnhlIter <- sqrt(mean((nnhl.predict - test$stars_business)^2))
+#     rmse.nnhlIter
+#     }
+# stopImplicitCluster()
+}
+```
+
+**2.Б.4.** Мера успешности бизнесов. Распределение оценок/лайков/кол-ва ревью по типам
+бизнеса по штатам.
+```{r "2.Б.4."}
+businessWellness <- json_businesses[,c("business_id","stars","state","review_count")]
+businessWellness <- businessWellness %>% group_by(state) %>%
+  mutate(aveStars = sum(stars)) %>% ungroup() %>% filter(aveStars>500)
+
+stars_g <- ggplot(businessWellness, aes(x=stars)) +
+  geom_density(kernel="gaussian") +
+  # geom_violin(scale = "area") +
+  facet_wrap(~state, ncol = 4) +
+  xlab("stars") + ylim(c(0,1.3))+
+  guides(fill=guide_legend(title="stars")) +
+  scale_fill_brewer(palette="Set1") +
+  theme_bw(base_size = 12)
+reviews_g <- ggplot(businessWellness, aes(x=log10(review_count))) +
+  geom_density(kernel="gaussian") +
+  # geom_violin(scale = "area") +
+  facet_wrap(~state, ncol = 4) +
+  xlab("log10(review_count)") + ylim(c(0,1.3))+
+  guides(fill=guide_legend(title="log(review_count)")) +
+  scale_fill_brewer(palette="Set1") +
+  theme_bw(base_size = 12)
+reviewsStart_g <- ggplot(businessWellness, aes(x=stars/review_count)) +
+  geom_density(kernel="gaussian") +
+  # geom_violin(scale = "area") +
+  facet_wrap(~state, ncol = 4) +
+  xlab("stars/review_count") + xlim(c(0,1.5)) +
+  ylab("") + ylim(c(0,2))+
+  guides(fill=guide_legend(title="stars/review_count")) +
+  scale_fill_brewer(palette="Set1") +
+  theme_bw(base_size = 12)
+# dev.new()
+stars_g
+# dev.new()
+reviews_g
+# dev.new()
+reviewsStart_g
+# rCharts::choropleth(
+#   cut(aveStars, 5, labels = F) ~ state,
+#   data = businessWellness,
+#   pal = "Accent"
+# )
+```
+
+ 
+### 2.Ревью
+
+```{r "Preload P section 1, Helpers"}
+# Тут нам понадобится helper 
+tryTolower = function(x)
+{
+  y = NA
+  # tryCatch error
+  try_error = tryCatch(tolower(x), error = function(e) e)
+  # if not an error
+  if (!inherits(try_error, "error"))
+    y = tolower(x)
+  return(y)
+}
+
+clean <- function(t){
+ t=gsub('[[:punct:]]','',t)
+ t=gsub('[[:cntrl:]]','',t) 
+ t=gsub('\\d+','',t)
+ t=gsub('[[:digit:]]','',t)
+ t=gsub('@\\w+','',t)
+ t=gsub('http\\w+','',t)
+ t=gsub("^\\s+|\\s+$", "", t)
+ t=sapply(t,function(x) tryTolower(x))
+ t=strsplit(t," ")
+ t=unlist(t)
+ return(as.character(t))
+}
+```
+
+```{r "Preload P section 2, Data"}
+positive <- fread("./data/positive-words.txt", skip = 35, header = F)
+negative <- fread("./data/negative-words.txt", skip = 35, header = F)
+```
+
+**2.Р.1.** Распределение количества слов в т.ч. по подгруппам (от оценки/типа бизнеса/штата)
+Сначала выберем необходимую категорию бизнеса, после чего работаем только со словами из ревью в 
+этой категории.
+```{r "2.Р.1. - 1"}
+# Отсуда сделать выбор данных по категории бизнеса
+category <- categories$category_name[[2]]
+
+rightBusinesesIDs <- json_businesses[sapply(json_businesses$categories, 
+                                            function(x){category %in% x}),]$business_id
+reviewClean <- json_review[,c("review_id","text","business_id","stars")]
+reviewClean <- reviewClean[reviewClean$business_id %in% rightBusinesesIDs,]
+reviewClean$wordVec <- lapply(reviewClean$text, function(x) clean(x))
+reviewClean$text <- NULL
+# Подсчет слов из позитивного и негативного листов
+returnpscore <- function(msg, dict) {
+    pos.match=match(msg, dict[[1]])
+    pos.match=!is.na(pos.match)
+    pos.score=sum(pos.match)
+    return(pos.score)
+}
+
+result <- function(positiveScore,negativeScore){
+  result <- if(positiveScore>negativeScore) "positive (P)"
+  paste0("The sentiment for '", category, "' is", result, "with ratio ", positiveScore/negativeScore,".")
+}
+
+positiveScore <- sum(unlist(lapply(reviewClean$wordVec, function(k) returnpscore(k, positive))))
+negativeScore <- sum(unlist(lapply(reviewClean$wordVec, function(k) returnpscore(k, negative))))
+```
+`r result(positiveScore,negativeScore)`
+
+```{r "2.Р.1. - 2"}
+# Получаем вектора пересечения слов ревью и словаря
+poswords <- function(msg, dict){
+    pmatch <- match(msg, dict[[1]])
+    posw <- positive[pmatch]
+    posw <- posw[!is.na(posw$V1)]
+    return(posw)
+}
+
+positiveCollection <- data.frame(NULL)
+negativeCollection <- data.frame(NULL)
+
+registerDoParallel(cores = 4)
+positiveCollection <- foreach(m = reviewClean$wordVec) %dopar% {
+  c(poswords(m, positive), positiveCollection)
+}
+negativeCollection <- foreach(m = reviewClean$wordVec) %dopar% {
+  c(poswords(m, negative), negativeCollection)
+}
+stopImplicitCluster()
+# На этот момент каждое ревью упрощено до вектора из негативных и позитивных слов
+# head(positiveCollection, 10)
+# head(negativeCollection, 10)
+
+dPositiveWords <- data.frame(table(unlist(positiveCollection)))
+names(dPositiveWords) <- c("pWords", "freq")
+dNegativeWords <- data.frame(table(unlist(negativeCollection)))
+names(dNegativeWords) <- c("nWords", "freq")
+
+# Фильтры по частотности
+dPositiveWords <- dPositiveWords %>%
+  mutate(pWords = as.character(pWords)) %>%
+  filter(freq>quantile(dPositiveWords$freq, 0.95)) %>%
+  arrange(desc(freq))
+
+dNegativeWords <- dNegativeWords %>%
+  mutate(nWords = as.character(nWords)) %>%
+  filter(freq>quantile(dNegativeWords$freq, 0.95)) %>%
+  arrange(desc(freq))
+
+# Графики
+ggplot(dPositiveWords, aes(pWords, freq)) +
+  geom_bar(stat="identity", fill ="lightblue") +
+  geom_text(aes(pWords, freq, label=freq), 
+            size=4) +
+  geom_text(aes(1, 5,
+                label=paste("Total Positive Words :")), size=4, hjust=0) +
+  labs(x="Major Positive Words", 
+       y="Frequency of Occurence",
+       title=paste("Major Positive Words and Occurence")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45)) +
+  scale_x_discrete(limits=dPositiveWords$pWords)
+  
+
+ggplot(dNegativeWords, aes(nWords, freq)) +
+  geom_bar(stat="identity", fill ="lightblue") +
+  geom_text(aes(nWords, freq, label=freq), size=4) +
+  geom_text(aes(1, 5,
+                label=paste("Total Positive Words :")), size=4, hjust=0) +
+  labs(x="Major Negative Words", 
+       y="Frequency of Occurence",
+       title=paste("Major Negative Words and Occurence")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45)) +
+  scale_x_discrete(limits=dNegativeWords$nWords)
+```
+
+**2.Р.2.** Возможность характеризовать отзыв по тональности
+```{r "2.Р.2. - 1"}
+library(tm)
+reviewScorpus <- Corpus(VectorSource(reviewClean$wordVec))
+reviewScorpus <- tm_map(reviewScorpus, removeWords, stopwords("english"))
+
+wordcloud::wordcloud(reviewScorpus,
+          scale=c(5,0.5),
+          random.order = F,
+          rot.per = 0.00,
+          use.r.layout = FALSE,
+          colors = RColorBrewer::brewer.pal(7, "Set2"),
+          max.words = 500)
+```
+
+
+```{r "2.Р.2. - 2"}
+# Анализ и построение графика часто встречающихся слов
+dtm <- DocumentTermMatrix(reviewScorpus)
+# removing sparse terms
+dtm <- removeSparseTerms(dtm,.90)
+freq <- sort(colSums(as.matrix(dtm)),
+             decreasing=TRUE)
+# get some more frequent terms
+findfd <- findFreqTerms(dtm, lowfreq=100)
+
+wf <- data.frame(word=names(freq),
+                 freq=freq)
+wfh <- wf %>% filter(freq>=75,!word==tolower(findfd))
+wfh <- wfh[order(rank(wfh$freq), decreasing = T),]
+
+# График
+pD <- wfh %>% arrange(desc(freq)) %>% slice(1:50)
+ggplot(pD, aes(word, freq, order=desc(freq))) +
+  geom_bar(stat="identity", 
+           fill='lightblue',
+           aes(order = desc(freq))) +
+  geom_text(aes(word, freq, 
+                label = paste0(round(freq/1000,0),"k")),
+            size=4) +
+  geom_text(aes(10, max(freq)*0.9,
+                label=paste("№ Positive Words:",
+                            positiveScore,
+                            "\n№ Negative Words:",
+                            negativeScore,"\n",
+                            result(positiveScore,negativeScore))),
+            size=5, hjust=0) +
+  labs(x="High Frequency Words ",
+       y="Number of Occurences",
+       title=paste("High Frequency Words and Occurence")) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=40,hjust=1)) +
+  scale_x_discrete(limits=pD$word)
+```
+
+```{r "2.Р.2. - 3"}
+# Найденный на просторах кусок который раскидывает слова по их тональности ?classify_emotion
+# df <- as.data.frame(df$review)
+# names(df) = "review"
+# 
+# df = as.data.frame(sapply(df, try.error))
+# df = as.data.frame(df[!is.na(df)])
+# names(df) = "review"
+# 
+# class_emo = classify_emotion(df, algorithm="bayes", prior=1.0)
+# emotion = class_emo[,7]
+# emotion[is.na(emotion)] = "unknown"
+# class_pol = classify_polarity(df, algorithm="bayes")
+# # get polarity best fit
+# polarity = class_pol[,4]
+# 
+# # data frame with results
+# sent_df = data.frame(text=df, emotion=emotion,
+# polarity=polarity, stringsAsFactors=FALSE)
+# 
+# sent_df = within(sent_df,
+#   emotion <- factor(emotion, levels=names(sort(table(emotion), decreasing=TRUE))))
+#   
+# # plot distribution of emotions
+# ggplot(sent_df, aes(x=emotion)) +
+#     geom_bar(aes(y=..count.., fill=emotion)) +
+#     scale_fill_brewer(palette="Dark2") +
+#     labs(x="emotion categories", y="number of tweets") 
+
+
+# А из этого получается wordcloud по эмоциям(цвет) и частоте(размер)
+# emos = levels(factor(sent_df$emotion))
+# nemo = length(emos)
+# emo.docs = rep("", nemo)
+# for (i in 1:nemo)
+# {
+#    tmp = df$review[emotion == emos[i]]
+#    emo.docs[i] = paste(tmp, collapse=" ")
+# }
+# 
+# # remove stopwords
+# emo.docs = removeWords(emo.docs, stopwords("english"))
+# # create corpus
+# corpus = Corpus(VectorSource(emo.docs))
+# tdm = TermDocumentMatrix(corpus)
+# tdm = as.matrix(tdm)
+# colnames(tdm) = emos
+# 
+# # comparison word cloud
+# suppressWarnings(suppressMessages(comparison.cloud(tdm, colors = brewer.pal(nemo, "Dark2"),
+#    scale = c(3,.5), random.order = FALSE, title.size = 1.5)))
+```
+
+
+**2.Р.3.** Если возможно - по видам бизнеса определить наиболее ключевые выражения влияющие на оценку 
+```{r}
+# ggpairs(cars,
+#         upper = list(continuous = "density", combo = "box"),
+#         lower = list(continuous = "points", combo = "dot"))
+```
+
+
+## 3. Формулировка задачи
+## 4. Подготовка тестовых моделей
+## 5. Разработка финальной версии алгоритма/модели
+## 6. Презентация результатов исследования
+
+[^yelp_data]: https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/yelp_dataset_challenge_academic_dataset.zip
